@@ -5,12 +5,13 @@ import { authenticateAdmin } from "@/lib/auth";
 // GET - Public access (anyone can read single announcement)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const { id } = await params; // ✅ FIXED: Add 'await' here
+    const announcementId = parseInt(id);
     
-    if (isNaN(id)) {
+    if (isNaN(announcementId)) {
       return NextResponse.json(
         { error: "Invalid announcement ID" },
         { status: 400 }
@@ -18,7 +19,7 @@ export async function GET(
     }
 
     const announcement = await prisma.post.findUnique({
-      where: { id },
+      where: { id: announcementId },
       include: {
         author: {
           select: {
@@ -49,7 +50,7 @@ export async function GET(
 // PUT - Admin only (update announcements)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // ✅ FIXED: Add Promise here
 ) {
   try {
     // Authenticate admin
@@ -61,11 +62,12 @@ export async function PUT(
       );
     }
 
-    const id = parseInt(params.id);
+    const { id } = await params; // ✅ FIXED: Add 'await' here
+    const announcementId = parseInt(id);
     
-    console.log("🔄 Updating announcement ID:", id, "by admin:", auth.user.email);
+    console.log("🔄 Updating announcement ID:", announcementId, "by admin:", auth.user.email);
     
-    if (isNaN(id)) {
+    if (isNaN(announcementId)) {
       return NextResponse.json(
         { error: "Invalid announcement ID" },
         { status: 400 }
@@ -78,11 +80,11 @@ export async function PUT(
 
     // Check if announcement exists
     const existingAnnouncement = await prisma.post.findUnique({
-      where: { id }
+      where: { id: announcementId }
     });
 
     if (!existingAnnouncement) {
-      console.log("❌ Announcement not found:", id);
+      console.log("❌ Announcement not found:", announcementId);
       return NextResponse.json(
         { error: "Announcement not found" },
         { status: 404 }
@@ -90,7 +92,7 @@ export async function PUT(
     }
 
     const updatedAnnouncement = await prisma.post.update({
-      where: { id },
+      where: { id: announcementId },
       data: {
         title,
         content,
@@ -127,7 +129,7 @@ export async function PUT(
 // DELETE - Admin only
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // ✅ FIXED: Add Promise here
 ) {
   try {
     // Authenticate admin
@@ -139,9 +141,10 @@ export async function DELETE(
       );
     }
 
-    const id = parseInt(params.id);
+    const { id } = await params; // ✅ FIXED: Add 'await' here
+    const announcementId = parseInt(id);
     
-    if (isNaN(id)) {
+    if (isNaN(announcementId)) {
       return NextResponse.json(
         { error: "Invalid announcement ID" },
         { status: 400 }
@@ -149,7 +152,7 @@ export async function DELETE(
     }
 
     await prisma.post.delete({
-      where: { id }
+      where: { id: announcementId }
     });
     
     console.log("🗑️ Announcement deleted by admin:", auth.user.email);
